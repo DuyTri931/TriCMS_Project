@@ -12,7 +12,7 @@ namespace CMS.Backend.Controllers
         {
             _context = context;
         }
-
+        
         // Danh sách Users
         public IActionResult Index()
         {
@@ -22,3 +22,4 @@ namespace CMS.Backend.Controllers
         }
     }
 }
+//
