@@ -1,44 +1,44 @@
 ﻿@model IEnumerable<CMS.Data.Entities.Post>
 
 <div class="container mt-4">
-    <h2 class="mb-4 text-danger">
-        DANH SÁCH BÀI VIẾT MỚI NHẤT
-    </h2>
+    <h2 class="mb-4 text-danger">DANH SÁCH BÀI VIẾT MỚI NHẤT</h2>
+
+    <a asp-action="Create" class="btn btn-success mb-3">
+        <i class="bi bi-plus-circle"></i> Thêm bài viết mới
+    </a>
 
     <div class="row">
         @foreach (var item in Model)
         {
             <div class="col-md-4 mb-3">
-                <div class="card shadow-sm">
-                    <img src="@item.ImageUrl"
-                         class="card-img-top"
-                         alt="Thumbnail"
-                         style="height:220px; object-fit:cover;">
-                    <div class="card-body">
+                <div class="card shadow-sm h-100">
 
-                        <span class="badge bg-info text-dark">
-                            @item.Category.Name
-                        </span>
+                    <img src="@item.ImageUrl" class="card-img-top" alt="Thumbnail">
 
-                        <h5 class="card-title text-primary">
-                            @item.Title
-                        </h5>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-primary">@item.Title</h5>
 
-                        <p class="card-text text-truncate">
-                            @item.Content
-                        </p>
+                        <p class="card-text text-truncate">@item.Content</p>
 
                         <p class="text-muted small">
-                            Ngày đăng:
-                            @item.CreatedDate.ToString("dd/MM/yyyy")
+                            Ngày đăng: @item.CreatedDate.ToString("dd/MM/yyyy")
                         </p>
 
-                        <a href="/Post/Details/@item.Id"
-                           class="btn btn-outline-primary btn-sm">
-                            Xem chi tiết
-                        </a>
+                        <div class="mt-auto">
+                            <a asp-action="Details" asp-route-id="@item.Id"
+                               class="btn btn-outline-primary btn-sm">Chi tiết</a>
 
+                            <a asp-action="Edit" asp-route-id="@item.Id"
+                               class="btn btn-outline-warning btn-sm">Sửa</a>
+
+                            <a asp-action="Delete" asp-route-id="@item.Id"
+                               class="btn btn-outline-danger btn-sm"
+                               onclick="return confirm('Bạn có chắc chắn muốn xóa bài viết này?')">
+                                Xóa
+                            </a>
+                        </div>
                     </div>
+
                 </div>
             </div>
         }

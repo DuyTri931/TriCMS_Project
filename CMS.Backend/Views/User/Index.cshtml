@@ -1,12 +1,22 @@
 ﻿@model IEnumerable<CMS.Data.Entities.User>
 
+@{
+    Layout = "_LayoutAdmin";
+}
+
 <div class="container mt-4">
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="text-dark">QUẢN LÝ THÀNH VIÊN</h2>
-        <button class="btn btn-success btn-sm">+ Thêm thành viên mới</button>
+
+        <a asp-action="Create" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i>
+            Thêm thành viên mới
+        </a>
     </div>
 
     <table class="table table-hover shadow-sm border">
+
         <thead class="table-light">
             <tr>
                 <th>ID</th>
@@ -16,29 +26,62 @@
                 <th>Thao Tác</th>
             </tr>
         </thead>
+
         <tbody>
+
             @foreach (var user in Model)
             {
                 <tr>
+
                     <td>@user.Id</td>
-                    <td><strong>@user.Username</strong></td>
-                    <td>@user.FullName</td>
+
                     <td>
-                        @if (user.Role == "Administrator")
+                        <strong>@user.Username</strong>
+                    </td>
+
+                    <td>@user.FullName</td>
+
+                    <td>
+
+                        @if (user.Role == "Admin")
                         {
-                            <span class="badge bg-danger">@user.Role</span>
+                            <span class="badge bg-danger">
+                                Admin
+                            </span>
                         }
                         else
                         {
-                            <span class="badge bg-info text-dark">@user.Role</span>
+                            <span class="badge bg-info text-dark">
+                                Editor
+                            </span>
                         }
+
                     </td>
+
                     <td>
-                        <button class="btn btn-sm btn-outline-warning">Sửa</button>
-                        <button class="btn btn-sm btn-outline-danger">Xóa</button>
+
+                        <a asp-action="Edit"
+                           asp-route-id="@user.Id"
+                           class="btn btn-outline-warning btn-sm">
+                            Sửa
+                        </a>
+
+                        <a asp-action="Delete"
+                           asp-route-id="@user.Id"
+                           class="btn btn-outline-danger btn-sm"
+                           onclick="return confirm('Bạn có chắc chắn muốn xóa thành viên này không?')">
+
+                            Xóa
+
+                        </a>
+
                     </td>
+
                 </tr>
             }
+
         </tbody>
+
     </table>
+
 </div>
