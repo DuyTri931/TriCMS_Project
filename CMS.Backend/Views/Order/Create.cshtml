@@ -1,0 +1,46 @@
+﻿@model CMS.Data.Entities.Order
+
+<h2 class="text-primary">Thêm đơn hàng</h2>
+
+<form asp-action="Create" method="post">
+
+    <div class="mb-3">
+        <label class="fw-bold">Ngày đặt</label>
+        <input asp-for="OrderDate" type="date" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="fw-bold">Khách hàng</label>
+        <select asp-for="CustomerId" class="form-control">
+            <option value="">-- Chọn khách hàng --</option>
+            @foreach (var c in ViewBag.Customers)
+            {
+                    <option value="@c.Id">@c.FullName (@c.Id)</option>
+            }
+        </select>
+        <span asp-validation-for="CustomerId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="fw-bold">Trạng thái</label>
+        <select asp-for="Status" class="form-control">
+            <option value="0">Chờ duyệt</option>
+            <option value="1">Đang giao</option>
+            <option value="2">Đã giao</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="fw-bold">Ghi chú</label>
+        <input asp-for="Notes" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-success mt-2">
+        <i class="bi bi-plus-circle"></i> Thêm
+    </button>
+
+    <a asp-action="Index" class="btn btn-secondary mt-2">
+        Quay lại
+    </a>
+
+</form>

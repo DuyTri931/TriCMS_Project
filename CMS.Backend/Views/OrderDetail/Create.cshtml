@@ -1,0 +1,30 @@
+﻿@model CMS.Data.Entities.OrderDetail
+
+<h2 class="text-primary">THÊM CHI TIẾT ĐƠN HÀNG</h2>
+
+<form asp-action="Create" method="post">
+
+    <div class="mb-2">
+        <label>Đơn hàng (OrderId)</label>
+        <input asp-for="OrderId" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Sản phẩm (ProductId)</label>
+        <input asp-for="ProductId" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Số lượng</label>
+        <input asp-for="Quantity" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Đơn giá</label>
+        <input asp-for="UnitPrice" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-2">Thêm</button>
+    <a asp-action="Index" class="btn btn-secondary mt-2">Quay lại</a>
+
+</form>

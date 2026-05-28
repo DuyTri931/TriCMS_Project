@@ -1,0 +1,37 @@
+﻿@model CMS.Data.Entities.Customer
+
+<h2 class="text-primary">CẬP NHẬT KHÁCH HÀNG</h2>
+
+<form asp-action="Edit" method="post">
+
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-2">
+        <label>Họ tên</label>
+        <input asp-for="FullName" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Email</label>
+        <input asp-for="Email" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>SĐT</label>
+        <input asp-for="Phone" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Địa chỉ</label>
+        <input asp-for="Address" class="form-control" />
+    </div>
+     <div class="mb-3">
+        <label>Mật khẩu mới</label>
+            <input asp-for="Password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+     </div>
+
+    <button type="submit" class="btn btn-warning mt-2">Cập nhật</button>
+    <a asp-action="Index" class="btn btn-secondary mt-2">Quay lại</a>
+
+</form>

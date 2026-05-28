@@ -1,0 +1,85 @@
+﻿
+using CMS.Data;
+using CMS.Data.Entities;
+using Microsoft.AspNetCore.Mvc;
+
+namespace CMS.Backend.Controllers
+{
+    public class CategoryProductController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+
+        // "Tiêm" kết nối vào Controller
+        public CategoryProductController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public IActionResult Index()
+        {
+            // Lấy dữ liệu THẬT từ bảng Categories trong SQL
+            var data = _context.CategoriesProducts.ToList();
+            return View(data);
+        }
+        // 1. Hàm GET: Dùng để hiển thị giao diện Form cho nhập
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return View();
+        }
+        // 2. Hàm POST: Dùng để đón dữ liệu từ Form gửi lên và lưu vào SQL
+        [HttpPost]
+        public IActionResult Create(CategoryProduct model)
+        {
+            // BƯỚC 1: Thêm dữ liệu vào bộ nhớ tạm của Entity Framework
+            _context.CategoriesProducts.Add(model);
+            // BƯỚC 2: Ra lệnh cho hệ thống ghi dữ liệu thật sự vào SQL Server
+            _context.SaveChanges();
+            // Sau khi lưu thành công, tự động quay về trang danh sách
+            return RedirectToAction("Index");
+        }
+
+        public IActionResult Delete(int id)
+        {
+            // Bước 1: Tìm đối tượng danh mục trong Database bằng Id
+            var categoryProduct = _context.CategoriesProducts.Find(id);
+
+            // Kiểm tra nếu tìm thấy thì mới xóa
+            if (categoryProduct != null)
+            {
+                // Bước 2: Lệnh xóa khỏi bộ nhớ tạm (Tracking)
+                _context.CategoriesProducts.Remove(categoryProduct);
+
+                // Bước 3: Chốt phiên làm việc, xóa thực sự trong SQL Server
+                _context.SaveChanges();
+            }
+
+            // Sau khi xóa xong, quay lại trang danh sách để cập nhật giao diện
+            return RedirectToAction("Index");
+        }
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            // Tìm danh mục trong Database theo Id [cite: 348, 350]
+            var categoryProduct = _context.CategoriesProducts.Find(id);
+
+            if (categoryProduct == null) return NotFound();
+
+            return View(categoryProduct); // Gửi đối tượng tìm được sang giao diện Edit
+        }
+
+        // 2. Hàm POST: Nhận dữ liệu mới từ người dùng và lưu lại
+        [HttpPost]
+        public IActionResult Edit(CategoryProduct model)
+        {
+            // Lệnh cập nhật đối tượng vào bộ nhớ tạm
+            _context.CategoriesProducts.Update(model);
+
+            // Lưu thay đổi thực sự xuống SQL Server [cite: 504, 509]
+            _context.SaveChanges();
+
+            // Quay lại trang danh sách để xem kết quả
+            return RedirectToAction("Index");
+        }
+    }
+}
