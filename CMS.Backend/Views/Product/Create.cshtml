@@ -1,0 +1,54 @@
+﻿@{
+    Layout = "_LayoutAdmin";
+}
+@model CMS.Data.Entities.Product
+
+<h2 class="text-success">THÊM SẢN PHẨM</h2>
+
+<form asp-action="Create" method="post">
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label fw-bold"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="CategoryProductId" class="form-label fw-bold"></label>
+        <select asp-for="CategoryProductId"
+                class="form-control"
+                asp-items="ViewBag.Categories">
+            <option value="">-- Chọn danh mục --</option>
+        </select>
+    </div>
+
+
+    <div class="mb-3">
+        <label asp-for="Price" class="form-label fw-bold"></label>
+        <input asp-for="Price" class="form-control" />
+        <span asp-validation-for="Price" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="StockQuantity" class="form-label fw-bold"></label>
+        <input asp-for="StockQuantity" class="form-control" />
+        <span asp-validation-for="StockQuantity" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label fw-bold"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-bold">Link ảnh sản phẩm(URL):</label>
+        <input asp-for="ImageUrl" class="form-control" placeholder="https://..." />
+    </div>
+
+    <button type="submit" class="btn btn-outline-success">
+        <i class="bi bi-check-circle"></i> Lưu
+    </button>
+
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+
+</form>

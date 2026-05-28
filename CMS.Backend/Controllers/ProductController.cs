@@ -6,43 +6,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CMS.Backend.Controllers
 {
-    public class PostController : Controller
+    public class ProductController : Controller
     {
         private readonly ApplicationDbContext _context;
-        public PostController(ApplicationDbContext context)
+
+        public ProductController(ApplicationDbContext context)
         {
             _context = context;
         }
+
+        // ================= INDEX =================
         public IActionResult Index()
         {
-            // Lấy dữ liệu THẬT từ bảng Posts trong SQL
-            var data = _context.Posts.ToList();
+            var data = _context.Products.ToList();
             return View(data);
         }
 
-        // Hàm Details: Hiển thị chi tiết một bài viết (Bổ sung  khá giỏi)
-        public IActionResult Details(int id)
-        {
-            var post = _context.Posts
-                .FirstOrDefault(p => p.Id == id);
-
-            if (post == null) return NotFound();
-
-            return View(post);
-        }
-        // 1. Hàm GET: Dùng để hiển thị giao diện Form cho nhập
+        // ================= CREATE =================
         [HttpGet]
         public IActionResult Create()
         {
-            // Chúng ta lấy danh sách Category để đổ vào ViewBag
-            ViewBag.CategoryList = new SelectList(_context.Categories, "Id", "Name");
+            LoadCategories();
             return View();
         }
 
-
-
         [HttpPost]
-        public IActionResult Create(Post model, IFormFile uploadImage)
+        public IActionResult Create(Product model, IFormFile uploadImage)
         {
             if (uploadImage != null && uploadImage.Length > 0)
             {
@@ -66,41 +55,25 @@ namespace CMS.Backend.Controllers
                 model.ImageUrl = "/uploads/" + fileName;
             }
 
-            _context.Posts.Add(model);
+            _context.Products.Add(model);
             _context.SaveChanges();
+
             return RedirectToAction("Index");
         }
 
-        public IActionResult Delete(int id)
-        {
-            // 1. Tìm bài viết theo Id
-            var post = _context.Posts.Find(id);
-
-            if (post != null)
-            {
-                // 2. Xóa khỏi bộ nhớ tạm
-                _context.Posts.Remove(post);
-
-                // 3. Cập nhật xuống SQL Server
-                _context.SaveChanges();
-            }
-            return RedirectToAction("Index");
-        }
-        // GET: Hiển thị form kèm dữ liệu cũ
+        // ================= EDIT =================
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            var post = _context.Posts.Find(id);
-            if (post == null) return NotFound();
+            var product = _context.Products.Find(id);
+            if (product == null) return NotFound();
 
-            // Chuẩn bị lại danh sách danh mục để người dùng có thể đổi chuyên mục
-            ViewBag.CategoryList = new SelectList(_context.Categories, "Id", "Name", post.CategoryId);
-            return View(post);
+            LoadCategories(product.CategoryProductId);
+            return View(product);
         }
 
-        // POST: Thực hiện cập nhật
         [HttpPost]
-        public IActionResult Edit(Post model, IFormFile uploadImage)
+        public IActionResult Edit(Product model, IFormFile uploadImage)
         {
             // Bước 1: Kiểm tra xem người dùng có chọn file ảnh mới không
             if (uploadImage != null && uploadImage.Length > 0)
@@ -130,10 +103,36 @@ namespace CMS.Backend.Controllers
                     model.ImageUrl = oldPost.ImageUrl;
                 }
             }
-            _context.Posts.Update(model);
+
+            _context.Products.Update(model);
             _context.SaveChanges();
+
             return RedirectToAction("Index");
         }
-    }
 
+        // ================= DELETE =================
+        public IActionResult Delete(int id)
+        {
+            var product = _context.Products.Find(id);
+
+            if (product != null)
+            {
+                _context.Products.Remove(product);
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        // ================= HELPER =================
+        private void LoadCategories(int? selectedId = null)
+        {
+            ViewBag.Categories = new SelectList(
+                _context.CategoriesProducts,
+                "Id",
+                "Name",
+                selectedId
+            );
+        }
+    }
 }

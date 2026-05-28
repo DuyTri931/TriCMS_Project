@@ -2,6 +2,7 @@
 using CMS.Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace CMS.Backend.Controllers
 {
@@ -30,22 +31,23 @@ namespace CMS.Backend.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(User model, string password)
+        public IActionResult Create(User model)
         {
-            if (string.IsNullOrEmpty(password))
+            // Kiểm tra xem tên đăng nhập đã tồn tại chưa
+            var checkExist = _context.Users.Any(u => u.Username == model.Username);
+            if (checkExist)
             {
-                ModelState.AddModelError("", "Password không được để trống");
+                ModelState.AddModelError("Username", "Tên đăng nhập này đã có người dùng!");
                 return View(model);
             }
 
-            // HASH PASSWORD
-            model.PasswordHash = _hasher.HashPassword(model, password);
-
+            // Lưu User mới vào Database
             _context.Users.Add(model);
             _context.SaveChanges();
 
             return RedirectToAction("Index");
         }
+
 
         // ================= DELETE =================
         public IActionResult Delete(int id)
@@ -62,6 +64,7 @@ namespace CMS.Backend.Controllers
         }
 
         // ================= EDIT =================
+        // GET: Hiển thị form kèm dữ liệu cũ của User
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -71,24 +74,31 @@ namespace CMS.Backend.Controllers
             return View(user);
         }
 
+        // POST: Thực hiện lưu thay đổi
         [HttpPost]
-        public IActionResult Edit(User model, string newPassword)
+        public IActionResult Edit(User model, string NewPassword)
         {
-            var user = _context.Users.Find(model.Id);
-            if (user == null) return NotFound();
+            // 1. Tìm User gốc trong Database để lấy lại mật khẩu cũ nếu cần
+            var existingUser = _context.Users.AsNoTracking().FirstOrDefault(u => u.Id == model.Id);
 
-            // update field thường
-            user.Username = model.Username;
+            if (existingUser == null) return NotFound();
 
-            // nếu có password mới → hash
-            if (!string.IsNullOrEmpty(newPassword))
+            // 2. Xử lý mật khẩu: Nếu nhập mới thì lấy cái mới, nếu trống thì lấy cái cũ
+            if (!string.IsNullOrEmpty(NewPassword))
             {
-                user.PasswordHash = _hasher.HashPassword(user, newPassword);
+                model.PasswordHash = NewPassword; // Sau này sẽ mã hóa tại đây
+            }
+            else
+            {
+                model.PasswordHash = existingUser.PasswordHash;
             }
 
+            // 3. Cập nhật vào Database
+            _context.Users.Update(model);
             _context.SaveChanges();
 
             return RedirectToAction("Index");
         }
+
     }
 }
