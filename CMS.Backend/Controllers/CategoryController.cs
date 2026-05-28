@@ -1,9 +1,11 @@
 ﻿using CMS.Data;
 using CMS.Data.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CMS.Backend.Controllers
 {
+    [Authorize] // 🔐 KHÓA TOÀN BỘ CATEGORY
     public class CategoryController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -48,8 +50,9 @@ namespace CMS.Backend.Controllers
         }
 
         // ==========================
-        // DELETE
+        // DELETE (POST - an toàn hơn)
         // ==========================
+        [HttpPost]
         public IActionResult Delete(int id)
         {
             var category = _context.Categories.Find(id);
@@ -69,14 +72,12 @@ namespace CMS.Backend.Controllers
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            // Tìm dữ liệu cũ trong DB
             var category = _context.Categories.Find(id);
 
             if (category == null)
                 return NotFound();
 
-            // Đổ dữ liệu lên form
-            return View(category);  
+            return View(category);
         }
 
         // ==========================
