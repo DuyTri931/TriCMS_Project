@@ -4,18 +4,25 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
+// ===============================
+// 1. ADD SERVICES
+// ===============================
+
+// MVC + API Controller
 builder.Services.AddControllersWithViews();
 
-// THÊM SWAGGER
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Đăng ký DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    )
+);
 
-// Cấu hình Cookie Authentication
+// Cấu hình Cookie Authentication cho trang Admin
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -23,28 +30,33 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Account/AccessDenied";
     });
 
-// 1. Khai báo chính sách CORS
+// Cấu hình CORS cho React Client
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("AllowReactApp", policy =>
     {
-        // Cho phép mọi nguồn, mọi phương thức, mọi header
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy.WithOrigins(
+                "http://localhost:3000",
+                "http://localhost:3001"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
 
-// Pipeline
+// ===============================
+// 2. CONFIGURE PIPELINE
+// ===============================
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-// BẬT SWAGGER KHI CHẠY DEV
+// Swagger chỉ bật khi chạy Development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -52,22 +64,38 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Cho phép truy cập file trong wwwroot, ví dụ: /img/abc.jpg
 app.UseStaticFiles();
 
 app.UseRouting();
 
-// 2. Kích hoạt chính sách CORS
-app.UseCors("AllowAll");
+// CORS phải nằm sau UseRouting và trước Authentication/Authorization
+app.UseCors("AllowReactApp");
 
+// Đăng nhập Admin
 app.UseAuthentication();
+
+// Phân quyền Admin
 app.UseAuthorization();
 
-// Route MVC
+// ===============================
+// 3. MAP ROUTES
+// ===============================
+
+// Route cho API Controller, ví dụ:
+// /api/Categories
+// /api/Posts
+// /api/Products
+app.MapControllers();
+
+// Route cho MVC Admin, ví dụ:
+// /Category/Index
+// /Post/Index
+// /Product/Index
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-// API Controller
-app.MapControllers();
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
 app.Run();

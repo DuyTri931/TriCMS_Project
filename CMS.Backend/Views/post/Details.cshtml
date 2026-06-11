@@ -1,14 +1,21 @@
 ﻿@model CMS.Data.Entities.Post
 
+@{
+    Layout = "_LayoutAdmin";
+    ViewData["Title"] = "Chi tiết bài viết";
+}
+
 <div class="container mt-5">
 
     <!-- BREADCRUMB -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
-                <a href="/Post">Danh sách bài viết</a>
+                <a asp-action="Index">Danh sách bài viết</a>
             </li>
-            <li class="breadcrumb-item active">Chi tiết bài viết</li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Chi tiết bài viết
+            </li>
         </ol>
     </nav>
 
@@ -16,40 +23,76 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
 
-            <!-- TITLE -->
-            <h1 class="display-4 fw-bold text-primary">
-                @Model.Title
-            </h1>
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
 
-            <!-- DATE -->
-            <p class="text-muted">
-                Đăng ngày: @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")
-            </p>
+                    <!-- TITLE -->
+                    <h1 class="fw-bold text-primary mb-3">
+                        @Model.Title
+                    </h1>
 
-            <hr />
+                    <!-- INFO -->
+                    <div class="mb-3 text-muted">
+                        <span>
+                            <i class="bi bi-calendar-event"></i>
+                            Đăng ngày: @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                        </span>
 
-            <!-- IMAGE -->
-            @if (!string.IsNullOrEmpty(Model.ImageUrl))
-            {
-                <div class="text-center mb-4">
-                    <img src="@Model.ImageUrl"
-                         class="img-fluid rounded shadow"
-                         alt="Post Image"
-                         style="width: 100%;">
+                        @if (Model.Category != null)
+                        {
+                            <span class="ms-3">
+                                <i class="bi bi-folder"></i>
+                                Danh mục: @Model.Category.Name
+                            </span>
+                        }
+                    </div>
+
+                    <hr />
+
+                    <!-- IMAGE -->
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="text-center mb-4">
+                            <img src="@Model.ImageUrl"
+                                 class="img-fluid rounded shadow-sm"
+                                 alt="@Model.Title"
+                                 style="max-width: 100%; max-height: 500px; object-fit: cover;" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-secondary">
+                            Bài viết này chưa có hình ảnh.
+                        </div>
+                    }
+
+                    <!-- CONTENT -->
+                    <div class="post-content fs-5 lh-lg">
+                        @Html.Raw(Model.Content)
+                    </div>
+
+                    <!-- BUTTONS -->
+                    <div class="mt-5 border-top pt-3 d-flex gap-2">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i>
+                            Quay lại danh sách
+                        </a>
+
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="bi bi-pencil-square"></i>
+                            Chỉnh sửa
+                        </a>
+
+                        <a asp-action="Delete"
+                           asp-route-id="@Model.Id"
+                           class="btn btn-danger"
+                           onclick="return confirm('Bạn có chắc muốn xóa bài viết này không?');">
+                            <i class="bi bi-trash"></i>
+                            Xóa
+                        </a>
+                    </div>
+
                 </div>
-            }
-
-            <!-- CONTENT (QUAN TRỌNG: RENDER HTML) -->
-            <div class="post-content fs-5 leading-lg">
-                @Html.Raw(Model.Content)
-            </div>
-
-            <!-- BACK BUTTON -->
-            <div class="mt-5 border-top pt-3">
-                <a href="/Post" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i>
-                    Quay lại danh sách
-                </a>
             </div>
 
         </div>

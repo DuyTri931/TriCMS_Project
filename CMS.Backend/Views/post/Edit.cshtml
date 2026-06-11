@@ -1,46 +1,132 @@
-﻿﻿@{
-Layout = "_LayoutAdmin";
+﻿@model CMS.Data.Entities.Post
+
+@{
+    Layout = "_LayoutAdmin";
 }
-@model CMS.Data.Entities.Post
 
 <div class="container mt-4">
-    <h2 class="text-warning">CHỈNH SỬA BÀI VIẾT</h2>
+
+    <h2 class="text-warning">
+        CHỈNH SỬA BÀI VIẾT
+    </h2>
+
     <hr />
 
-    <form asp-action="Edit" method="post">
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
         <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ImageUrl" />
 
         <div class="mb-3">
-            <label asp-for="Title" class="form-label fw-bold"></label>
-            <input asp-for="Title" class="form-control" />
-            <span asp-validation-for="Title" class="text-danger"></span>
+
+            <label asp-for="Title"
+                   class="form-label fw-bold">
+            </label>
+
+            <input asp-for="Title"
+                   class="form-control" />
+
+            <span asp-validation-for="Title"
+                  class="text-danger"></span>
+
         </div>
 
         <div class="mb-3">
-            <label asp-for="Content" class="form-label fw-bold"></label>
-            <textarea asp-for="Content" class="form-control" rows="5"></textarea>
-            <span asp-validation-for="Content" class="text-danger"></span>
+
+            <label asp-for="Content"
+                   class="form-label fw-bold">
+            </label>
+
+            <textarea asp-for="Content"
+                      class="form-control"
+                      rows="5"></textarea>
+
+            <span asp-validation-for="Content"
+                  class="text-danger"></span>
+
         </div>
 
         <div class="mb-3">
-            <label asp-for="ImageUrl" class="form-label fw-bold"></label>
-            <input asp-for="ImageUrl" class="form-control" type="text" />
-            <span asp-validation-for="ImageUrl" class="text-danger"></span>
+
+            <label class="form-label fw-bold">
+                Ảnh hiện tại
+            </label>
+
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                    <div class="mb-2">
+                        <img src="@Model.ImageUrl"
+                             width="180"
+                             class="img-thumbnail" />
+                    </div>
+            }
+            else
+            {
+                    <div class="text-muted mb-2">
+                        Chưa có ảnh
+                    </div>
+            }
+
+            <label class="form-label fw-bold">
+                Chọn ảnh mới nếu muốn thay đổi
+            </label>
+
+            <input type="file"
+                   name="imageFile"
+                   class="form-control"
+                   accept="image/*" />
+
         </div>
 
         <div class="mb-3">
-            <label asp-for="CategoryId" class="form-label fw-bold"></label>
-            <input asp-for="CategoryId" class="form-control" type="number" />
-            <span asp-validation-for="CategoryId" class="text-danger"></span>
+
+            <label asp-for="CategoryId"
+                   class="form-label fw-bold">
+            </label>
+
+            <input asp-for="CategoryId"
+                   type="number"
+                   class="form-control" />
+
+            <span asp-validation-for="CategoryId"
+                  class="text-danger"></span>
+
         </div>
 
         <div class="mb-3">
-            <label asp-for="CreatedDate" class="form-label fw-bold"></label>
-            <input asp-for="CreatedDate" class="form-control" type="datetime-local" />
-            <span asp-validation-for="CreatedDate" class="text-danger"></span>
+
+            <label asp-for="CreatedDate"
+                   class="form-label fw-bold">
+            </label>
+
+            <input asp-for="CreatedDate"
+                   type="datetime-local"
+                   asp-format="{0:yyyy-MM-ddTHH:mm}"
+                   class="form-control" />
+
+            <span asp-validation-for="CreatedDate"
+                  class="text-danger"></span>
+
         </div>
 
-        <button type="submit" class="btn btn-warning">Cập nhật bài viết</button>
-        <a asp-action="Index" class="btn btn-secondary">Hủy bỏ</a>
+        <button type="submit"
+                class="btn btn-warning">
+            Cập nhật bài viết
+        </button>
+
+        <a asp-action="Index"
+           class="btn btn-secondary">
+            Hủy bỏ
+        </a>
+
     </form>
+
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

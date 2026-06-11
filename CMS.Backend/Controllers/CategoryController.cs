@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CMS.Backend.Controllers
 {
-    [Authorize] // 🔐 KHÓA TOÀN BỘ CATEGORY
+    [Authorize]
     public class CategoryController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -16,7 +16,7 @@ namespace CMS.Backend.Controllers
         }
 
         // ==========================
-        // LIST
+        // LIST ADMIN
         // ==========================
         public IActionResult Index()
         {
@@ -25,7 +25,7 @@ namespace CMS.Backend.Controllers
         }
 
         // ==========================
-        // CREATE (GET)
+        // CREATE GET
         // ==========================
         [HttpGet]
         public IActionResult Create()
@@ -34,7 +34,7 @@ namespace CMS.Backend.Controllers
         }
 
         // ==========================
-        // CREATE (POST)
+        // CREATE POST
         // ==========================
         [HttpPost]
         public IActionResult Create(Category model)
@@ -50,7 +50,37 @@ namespace CMS.Backend.Controllers
         }
 
         // ==========================
-        // DELETE (POST - an toàn hơn)
+        // EDIT GET
+        // ==========================
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            var category = _context.Categories.Find(id);
+
+            if (category == null)
+                return NotFound();
+
+            return View(category);
+        }
+
+        // ==========================
+        // EDIT POST
+        // ==========================
+        [HttpPost]
+        public IActionResult Edit(Category model)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Categories.Update(model);
+                _context.SaveChanges();
+                return RedirectToAction("Index");
+            }
+
+            return View(model);
+        }
+
+        // ==========================
+        // DELETE POST
         // ==========================
         [HttpPost]
         public IActionResult Delete(int id)
@@ -67,33 +97,22 @@ namespace CMS.Backend.Controllers
         }
 
         // ==========================
-        // EDIT (GET)
+        // API CHO REACT
+        // Link: https://localhost:7057/api/Categories
         // ==========================
-        [HttpGet]
-        public IActionResult Edit(int id)
+        [AllowAnonymous]
+        [HttpGet("/api/Categories")]
+        public IActionResult GetCategoriesApi()
         {
-            var category = _context.Categories.Find(id);
+            var data = _context.Categories
+                .Select(c => new
+                {
+                    id = c.Id,
+                    name = c.Name
+                })
+                .ToList();
 
-            if (category == null)
-                return NotFound();
-
-            return View(category);
-        }
-
-        // ==========================
-        // EDIT (POST)
-        // ==========================
-        [HttpPost]
-        public IActionResult Edit(Category model)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Categories.Update(model);
-                _context.SaveChanges();
-                return RedirectToAction("Index");
-            }
-
-            return View(model);
+            return Ok(data);
         }
     }
 }

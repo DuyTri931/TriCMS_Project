@@ -1,10 +1,8 @@
-﻿using CMS.Data;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using System.Linq;
-using System.Collections.Generic;
+using CMS.Data; // Thay bằng Namespace của project Data
 
 public class AccountController : Controller
 {
@@ -15,7 +13,6 @@ public class AccountController : Controller
         _context = context;
     }
 
-    // ================= LOGIN =================
     [HttpGet]
     public IActionResult Login()
     {
@@ -25,27 +22,24 @@ public class AccountController : Controller
     [HttpPost]
     public async Task<IActionResult> Login(string username, string password)
     {
-        var user = _context.Users
-            .FirstOrDefault(u => u.Username == username && u.PasswordHash == password);
+        // 1. Kiểm tra tài khoản trong Database
+        var user = _context.Users.FirstOrDefault(u => u.Username == username && u.PasswordHash == password);
 
         if (user != null)
         {
+            // 2. Thiết lập danh tính (Claims)
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role),
-                new Claim("FullName", user.FullName ?? "")
-            };
+        {
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Role, user.Role), // Lưu vai trò: Admin/Editor
+            new Claim("FullName", user.FullName)
+        };
 
-            var claimsIdentity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme
-            );
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity)
-            );
+            // 3. Đăng nhập và lưu Cookie vào trình duyệt
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity));
 
             return RedirectToAction("Index", "Home");
         }
@@ -54,14 +48,13 @@ public class AccountController : Controller
         return View();
     }
 
-    // ================= LOGOUT =================
+    // Hàm đăng xuất
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Login");
     }
 
-    // ================= ACCESS DENIED (THÊM MỚI) =================
     [HttpGet]
     public IActionResult AccessDenied()
     {

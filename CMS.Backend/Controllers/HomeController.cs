@@ -1,35 +1,31 @@
-﻿using System.Diagnostics;
-using CMS.Backend.Models;
+﻿using CMS.Backend.Models;
 using CMS.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
+using System.Linq;
 
 namespace CMS.Backend.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly ILogger<HomeController> _logger;
 
-        // Tiêm DbContext + Logger
-        public HomeController(
-            ILogger<HomeController> logger,
-            ApplicationDbContext context)
+        // Constructor Injection
+        public HomeController(ApplicationDbContext context)
         {
-            _logger = logger;
             _context = context;
         }
 
-        // ==========================
-        // Trang Home - Lấy 3 bài viết mới nhất
-        // ==========================
+        // Trang ch?
         public IActionResult Index()
         {
+            // L?y 3 bài vi?t m?i nh?t
             var latestPosts = _context.Posts
-                .Include(p => p.Category) // lấy kèm danh mục
-                .OrderByDescending(p => p.CreatedDate) // mới nhất lên đầu
-                .Take(3) // chỉ lấy 3 bài
-                .ToList();
+                                      .Include(p => p.Category)
+                                      .OrderByDescending(p => p.CreatedDate)
+                                      .Take(3)
+                                      .ToList();
 
             return View(latestPosts);
         }
@@ -39,12 +35,16 @@ namespace CMS.Backend.Controllers
             return View();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        [ResponseCache(Duration = 0,
+                       Location = ResponseCacheLocation.None,
+                       NoStore = true)]
+
         public IActionResult Error()
         {
             return View(new ErrorViewModel
             {
-                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+                RequestId = Activity.Current?.Id
+                            ?? HttpContext.TraceIdentifier
             });
         }
     }
