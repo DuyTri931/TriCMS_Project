@@ -1,42 +1,30 @@
 ﻿import React from "react";
 import CategoryProductList from "./components/CategoryProductList";
-import ProductList from "./components/ProductList";
-import CategoryList from "./components/CategoryList";
+import BlogCategoryList from "./components/BlogCategoryList";
 import PostList from "./components/PostList";
 import "./App.css";
 
 function App() {
     return (
         <div className="container mt-5">
-            <header className="pb-3 mb-4 border-bottom">
+            <header className="pb-3 mb-4 border-bottom d-flex justify-content-between align-items-center">
                 <span className="fs-4 font-weight-bold text-dark text-uppercase">
-                    👗 FASHION BOUTIQUE - THỜI TRANG CÔNG SỞ & DẠ HỘI
+                    👗 Fashion Boutique - Hệ Thống Quản Trị Nội Dung & Bán Hàng
+                </span>
+
+                <span className="badge badge-success px-3 py-2">
+                    Học Phần Chuyên Đề ASP.NET + ReactJS
                 </span>
             </header>
 
-            {/* PHẦN SẢN PHẨM */}
             <div className="row">
+                {/* CỘT TRÁI */}
                 <div className="col-md-4">
                     <CategoryProductList />
+                    <BlogCategoryList />
                 </div>
 
-                <div className="col-md-8">
-                    <h4 className="mb-4 text-uppercase text-secondary font-weight-bold">
-                        Bộ sưu tập mới nhất
-                    </h4>
-
-                    <ProductList />
-                </div>
-            </div>
-
-            <hr className="my-5" />
-
-            {/* PHẦN TIN TỨC / BLOG */}
-            <div className="row">
-                <div className="col-md-4">
-                    <CategoryList />
-                </div>
-
+                {/* CỘT PHẢI */}
                 <div className="col-md-8">
                     <h4 className="mb-4 text-uppercase text-secondary font-weight-bold">
                         Tin tức & Blog thời trang
@@ -45,6 +33,12 @@ function App() {
                     <PostList />
                 </div>
             </div>
+
+            <footer className="pt-3 mt-5 text-muted border-top text-center small">
+                <p>
+                    © 2026 - Đồ án thực hành phân tầng ASP.NET Core Web API kết hợp ReactJS Client-side
+                </p>
+            </footer>
         </div>
     );
 }
