@@ -2,125 +2,82 @@
 import blogService from '../services/blogService';
 
 const PostList = () => {
+    // 1. Khai báo State chứa mảng bài viết lấy từ SQL Server
     const [posts, setPosts] = useState([]);
+
+    // Khai báo State quản lý trạng thái chờ (Loading) nhằm tối ưu trải nghiệm người dùng
     const [loading, setLoading] = useState(true);
 
-    const backendUrl = 'https://localhost:7057';
-
+    // 2. Sử dụng useEffect để kiểm soát vòng đời gọi dữ liệu
     useEffect(() => {
+        // Viết hàm bất đồng bộ để đợi dữ liệu từ Server truyền về
         const fetchPosts = async () => {
             try {
-                setLoading(true);
+                setLoading(true); // Bắt đầu tải
 
-                const result = await blogService.getAllPosts();
+                // Gọi sang lớp Service để kích hoạt Axios lấy dữ liệu JSON
+                const data = await blogService.getAllPosts();
 
-                console.log('DỮ LIỆU BÀI VIẾT TỪ API:', result);
-
-                const data = result.data ? result.data : result;
-
-                setPosts(Array.isArray(data) ? data : []);
+                // Nạp cục dữ liệu JSON vừa lấy vào State 'posts'
+                setPosts(data);
             } catch (error) {
-                console.error('Lỗi khi tải danh sách bài viết:', error);
-                setPosts([]);
+                console.error("Quá trình kết nối API bài viết thất bại:", error);
             } finally {
-                setLoading(false);
+                setLoading(false); // Kết thúc tải dữ liệu (Dù thành công hay thất bại)
             }
         };
 
+        // Kích hoạt hàm thực thi
         fetchPosts();
-    }, []);
+    }, []); // Mảng rỗng [] ở đây cực kỳ quan trọng: Đảm bảo API chỉ gọi 1 LẦN DUY NHẤT khi mở trang
 
-    const getImageUrl = (imageUrl) => {
-        if (!imageUrl) {
-            return 'https://via.placeholder.com/400x220?text=No+Image';
-        }
-
-        if (imageUrl.startsWith('http')) {
-            return imageUrl;
-        }
-
-        return `${backendUrl}${imageUrl}`;
-    };
-
-    const getSummary = (post) => {
-        if (post.shortDescription) {
-            return post.shortDescription;
-        }
-
-        if (post.content) {
-            const plainText = post.content.replace(/<[^>]+>/g, '');
-            return plainText.length > 100
-                ? plainText.substring(0, 100) + '...'
-                : plainText;
-        }
-
-        return 'Đang cập nhật nội dung tóm tắt cho bài viết...';
-    };
-
-    const formatDate = (date) => {
-        if (!date) {
-            return 'Đang cập nhật';
-        }
-
-        return new Date(date).toLocaleDateString('vi-VN');
-    };
-
+    // 3. Xử lý trạng thái hiển thị giao diện tạm thời
     if (loading) {
         return (
-            <div className="text-center my-4">
-                Đang tải tin tức thời trang...
+            <div className="text-center my-5">
+                <div className="spinner-border text-info" role="status"></div>
+                <p className="mt-2 text-muted">Đang kết nối Database lấy tin tức thời trang...</p>
             </div>
         );
     }
 
+    // 4. Render giao diện HTML/Bootstrap khi đã có dữ liệu thành công
     return (
-        <div className="mt-5">
-          
+        <div className="card shadow-sm p-4 bg-white rounded">
+            <h4 className="card-title text-uppercase font-weight-bold text-dark border-bottom pb-3 mb-4">
+                <i className="fa-solid fa-newspaper mr-2 text-info"></i> Xu hướng & Bí quyết mặc đẹp
+            </h4>
 
             {posts.length === 0 ? (
-                <p className="text-muted">
-                    Chưa có bài viết tin tức nào.
-                </p>
+                <div className="alert alert-light text-center border">
+                    <p className="text-muted m-0">Hiện tại chưa có bài viết xu hướng nào trong hệ thống.</p>
+                </div>
             ) : (
                 <div className="row">
-                    {posts.map((post) => (
-                        <div className="col-md-6 mb-4" key={post.id}>
-                            <div className="card h-100 shadow-sm border-light">
-                                <img
-                                    src={getImageUrl(post.imageUrl)}
-                                    alt={post.title}
-                                    className="card-img-top"
-                                    style={{
-                                        height: '180px',
-                                        objectFit: 'cover'
-                                    }}
-                                />
-
-                                <div className="card-body d-flex flex-column">
-                                    <h5 className="card-title font-weight-bold">
-                                        <a
-                                            href={`/post/${post.id}`}
-                                            className="text-dark text-decoration-none"
-                                        >
-                                            {post.title}
+                    {posts.map((item) => (
+                        <div className="col-12 mb-4" key={item.id}>
+                            <div className="card h-100 border-0 shadow-sm bg-light">
+                                <div className="card-body">
+                                    <h5 className="font-weight-bold">
+                                        <a href={`/post/${item.id}`} className="text-dark text-decoration-none text-hover-primary">
+                                            {item.title}
                                         </a>
                                     </h5>
 
-                                    <p className="card-text text-muted small">
-                                        Ngày đăng: {formatDate(post.createdDate)}
+                                    {/* Hiển thị đoạn mô tả ngắn trích dẫn */}
+                                    <p className="text-secondary small mt-2 card-text-truncate">
+                                        {item.shortDescription || 'Nhấn để xem chi tiết bài viết chia sẻ về xu hướng phối đồ công sở...'}
                                     </p>
 
-                                    <p className="card-text">
-                                        {getSummary(post)}
-                                    </p>
-
-                                    <div className="mt-auto">
-                                        <a
-                                            href={`/post/${post.id}`}
-                                            className="btn btn-outline-dark btn-sm w-100"
-                                        >
-                                            Đọc thêm
-                                        </a>
+                                    <div className="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-light text-muted small">
+                                        <span>
+                                            <i className="fa-regular fa-calendar-days mr-1 text-secondary"></i>
+                                            {/* Định dạng lại chuỗi DateTime thô của SQL thành ngày thuần Việt */}
+                                            {new Date(item.createdDate).toLocaleDateString('vi-VN')}
+                                        </span>
+                                        <span className="badge badge-pill badge-info px-3 py-2 cursor-pointer">
+                                            Đọc tiếp <i className="fa-solid fa-angle-right ml-1"></i>
+                                        </span>
                                     </div>
                                 </div>
                             </div>

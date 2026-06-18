@@ -2,6 +2,7 @@
 using CMS.Data.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace CMS.Backend.Controllers
@@ -10,33 +11,86 @@ namespace CMS.Backend.Controllers
     public class PostController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IWebHostEnvironment _env;
 
-        public PostController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
+        public PostController(ApplicationDbContext context, IWebHostEnvironment env)
         {
             _context = context;
-            _webHostEnvironment = webHostEnvironment;
+            _env = env;
         }
 
-        // ================= INDEX =================
-
-        public IActionResult Index()
+        private void LoadCategoryList(int? selectedId = null)
         {
-            var data = _context.Posts
-                               .Include(p => p.Category)
-                               .OrderByDescending(p => p.CreatedDate)
-                               .ToList();
-
-            return View(data);
+            ViewBag.CategoryList = new SelectList(
+                _context.Categories.ToList(),
+                "Id",
+                "Name",
+                selectedId
+            );
         }
 
-        // ================= DETAILS =================
+        private string SaveUploadImage(IFormFile uploadImage)
+        {
+            string webRootPath = _env.WebRootPath;
+
+            if (string.IsNullOrEmpty(webRootPath))
+            {
+                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+
+            string uploadsFolder = Path.Combine(webRootPath, "uploads");
+
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            string extension = Path.GetExtension(uploadImage.FileName).ToLower();
+
+            string[] allowedExtensions =
+            {
+                ".jpg", ".jpeg", ".png", ".gif", ".webp"
+            };
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                throw new Exception("Chỉ được upload ảnh có định dạng .jpg, .jpeg, .png, .gif, .webp");
+            }
+
+            string fileName = Guid.NewGuid().ToString() + extension;
+            string filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                uploadImage.CopyTo(stream);
+            }
+
+            return "/uploads/" + fileName;
+        }
+
+        public IActionResult Index(int? id)
+        {
+            var query = _context.Posts
+                .Include(p => p.Category)
+                .AsQueryable();
+
+            if (id != null)
+            {
+                query = query.Where(p => p.CategoryId == id);
+            }
+
+            var posts = query
+                .OrderByDescending(p => p.CreatedDate)
+                .ToList();
+
+            return View(posts);
+        }
 
         public IActionResult Details(int id)
         {
             var post = _context.Posts
-                               .Include(p => p.Category)
-                               .FirstOrDefault(p => p.Id == id);
+                .Include(p => p.Category)
+                .FirstOrDefault(p => p.Id == id);
 
             if (post == null)
             {
@@ -46,58 +100,54 @@ namespace CMS.Backend.Controllers
             return View(post);
         }
 
-        // ================= CREATE =================
-
         [HttpGet]
         public IActionResult Create()
         {
+            LoadCategoryList();
             return View();
         }
 
         [HttpPost]
-        public IActionResult Create(Post model, IFormFile? imageFile)
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(Post model, IFormFile? uploadImage)
         {
             ModelState.Remove("ImageUrl");
             ModelState.Remove("Category");
 
-            if (model.CreatedDate == DateTime.MinValue)
+            if (!ModelState.IsValid)
             {
-                model.CreatedDate = DateTime.Now;
-            }
-
-            if (imageFile != null && imageFile.Length > 0)
-            {
-                string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "img");
-
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-
-                string filePath = Path.Combine(uploadsFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    imageFile.CopyTo(stream);
-                }
-
-                model.ImageUrl = "/img/" + fileName;
-            }
-
-            if (ModelState.IsValid == false)
-            {
+                LoadCategoryList(model.CategoryId);
                 return View(model);
             }
 
-            _context.Posts.Add(model);
-            _context.SaveChanges();
+            try
+            {
+                if (uploadImage != null && uploadImage.Length > 0)
+                {
+                    model.ImageUrl = SaveUploadImage(uploadImage);
+                }
+                else
+                {
+                    model.ImageUrl = "/uploads/default.jpg";
+                }
 
-            return RedirectToAction("Index");
+                if (model.CreatedDate == DateTime.MinValue)
+                {
+                    model.CreatedDate = DateTime.Now;
+                }
+
+                _context.Posts.Add(model);
+                _context.SaveChanges();
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                LoadCategoryList(model.CategoryId);
+                return View(model);
+            }
         }
-
-        // ================= EDIT =================
 
         [HttpGet]
         public IActionResult Edit(int id)
@@ -109,22 +159,20 @@ namespace CMS.Backend.Controllers
                 return NotFound();
             }
 
+            LoadCategoryList(post.CategoryId);
             return View(post);
         }
 
         [HttpPost]
-        public IActionResult Edit(Post model, IFormFile? imageFile)
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(Post model, IFormFile? uploadImage)
         {
             ModelState.Remove("ImageUrl");
             ModelState.Remove("Category");
 
-            if (model.CreatedDate == DateTime.MinValue)
+            if (!ModelState.IsValid)
             {
-                model.CreatedDate = DateTime.Now;
-            }
-
-            if (ModelState.IsValid == false)
-            {
+                LoadCategoryList(model.CategoryId);
                 return View(model);
             }
 
@@ -135,38 +183,33 @@ namespace CMS.Backend.Controllers
                 return NotFound();
             }
 
-            post.Title = model.Title;
-            post.Content = model.Content;
-            post.CategoryId = model.CategoryId;
-            post.CreatedDate = model.CreatedDate;
-
-            if (imageFile != null && imageFile.Length > 0)
+            try
             {
-                string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "img");
+                post.Title = model.Title;
+                post.Content = model.Content;
+                post.CategoryId = model.CategoryId;
 
-                if (!Directory.Exists(uploadsFolder))
+                if (post.CreatedDate == DateTime.MinValue)
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    post.CreatedDate = DateTime.Now;
                 }
 
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-
-                string filePath = Path.Combine(uploadsFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                if (uploadImage != null && uploadImage.Length > 0)
                 {
-                    imageFile.CopyTo(stream);
+                    post.ImageUrl = SaveUploadImage(uploadImage);
                 }
 
-                post.ImageUrl = "/img/" + fileName;
+                _context.SaveChanges();
+
+                return RedirectToAction("Index");
             }
-
-            _context.SaveChanges();
-
-            return RedirectToAction("Index");
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                LoadCategoryList(model.CategoryId);
+                return View(model);
+            }
         }
-
-        // ================= DELETE =================
 
         public IActionResult Delete(int id)
         {

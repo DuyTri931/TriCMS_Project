@@ -1,46 +1,31 @@
-﻿import React from "react";
-import CategoryProductList from "./components/CategoryProductList";
-import BlogCategoryList from "./components/BlogCategoryList";
-import PostList from "./components/PostList";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./pages/home";
+import Shop from "./pages/shop";
+import ProductDetail from "./pages/product-detail";
+import Blog from "./pages/blog";
+import BlogDetail from "./pages/blog/BlogDetail";
+import Cart from "./pages/cart";
+import Checkout from "./pages/checkout";
 import "./App.css";
 
 function App() {
-    return (
-        <div className="container mt-5">
-            <header className="pb-3 mb-4 border-bottom d-flex justify-content-between align-items-center">
-                <span className="fs-4 font-weight-bold text-dark text-uppercase">
-                    👗 Fashion Boutique - Hệ Thống Quản Trị Nội Dung & Bán Hàng
-                </span>
-
-                <span className="badge badge-success px-3 py-2">
-                    Học Phần Chuyên Đề ASP.NET + ReactJS
-                </span>
-            </header>
-
-            <div className="row">
-                {/* CỘT TRÁI */}
-                <div className="col-md-4">
-                    <CategoryProductList />
-                    <BlogCategoryList />
-                </div>
-
-                {/* CỘT PHẢI */}
-                <div className="col-md-8">
-                    <h4 className="mb-4 text-uppercase text-secondary font-weight-bold">
-                        Tin tức & Blog thời trang
-                    </h4>
-
-                    <PostList />
-                </div>
-            </div>
-
-            <footer className="pt-3 mt-5 text-muted border-top text-center small">
-                <p>
-                    © 2026 - Đồ án thực hành phân tầng ASP.NET Core Web API kết hợp ReactJS Client-side
-                </p>
-            </footer>
-        </div>
-    );
+  return (
+    <Router>
+      <main className="min-vh-100 bg-white">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:id" element={<BlogDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="*" element={<div className="container text-center py-5 my-5"><h2>404 - KHÔNG TÌM THẤY TRANG</h2><a href="/" className="btn btn-dark btn-sm mt-2">Quay lại Trang Chủ</a></div>} />
+        </Routes>
+      </main>
+    </Router>
+  );
 }
 
 export default App;

@@ -1,9 +1,26 @@
 ﻿import React, { useEffect, useState } from "react";
 import productService from "../services/productService";
 
+// Đổi lại đúng cổng Backend của bạn
+const API_BASE_URL = "https://localhost:7001";
+
 const ProductList = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const getImageUrl = (imageUrl) => {
+        if (!imageUrl) {
+            return "https://via.placeholder.com/400x220?text=No+Image";
+        }
+
+        // Nếu ảnh đã là link đầy đủ
+        if (imageUrl.startsWith("http")) {
+            return imageUrl;
+        }
+
+        // Nếu backend trả về /img/abc.jpg
+        return `${API_BASE_URL}${imageUrl}`;
+    };
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -43,17 +60,19 @@ const ProductList = () => {
                 products.map((item) => (
                     <div className="col-md-6 mb-4" key={item.id}>
                         <div className="card h-100 shadow-sm border">
-                            {item.imageUrl && (
-                                <img
-                                    src={item.imageUrl}
-                                    className="card-img-top"
-                                    alt={item.name}
-                                    style={{
-                                        height: "220px",
-                                        objectFit: "cover",
-                                    }}
-                                />
-                            )}
+                            <img
+                                src={getImageUrl(item.imageUrl)}
+                                className="card-img-top"
+                                alt={item.name}
+                                style={{
+                                    height: "220px",
+                                    objectFit: "cover",
+                                }}
+                                onError={(e) => {
+                                    e.target.src =
+                                        "https://via.placeholder.com/400x220?text=No+Image";
+                                }}
+                            />
 
                             <div className="card-body">
                                 <h5 className="card-title font-weight-bold text-dark">

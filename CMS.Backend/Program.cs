@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using CMS.Data;
+﻿using CMS.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,12 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Cho phép upload file dung lượng lớn
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 104857600; // 100MB
+});
+
 // Đăng ký DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
@@ -28,6 +35,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
     });
 
 // Cấu hình CORS cho React Client
@@ -37,10 +45,17 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
                 "http://localhost:3000",
-                "http://localhost:3001"
+                "http://localhost:3001",
+                "http://localhost:3002",
+                "http://localhost:3003",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:3001",
+                "http://127.0.0.1:3002",
+                "http://127.0.0.1:3003"
             )
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -56,7 +71,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Swagger chỉ bật khi chạy Development
+// Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -65,7 +80,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Cho phép truy cập file trong wwwroot, ví dụ: /img/abc.jpg
+// Đọc file ảnh trong wwwroot
+// Ví dụ: /img/tenanh.jpg hoặc /uploads/tenanh.jpg
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -83,16 +99,12 @@ app.UseAuthorization();
 // 3. MAP ROUTES
 // ===============================
 
-// Route cho API Controller, ví dụ:
-// /api/Categories
-// /api/Posts
-// /api/Products
+// API Controller
+// Ví dụ: /api/Products, /api/Posts, /api/Categories
 app.MapControllers();
 
-// Route cho MVC Admin, ví dụ:
-// /Category/Index
-// /Post/Index
-// /Product/Index
+// MVC Admin
+// Ví dụ: /Post/Index, /Product/Index
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}"

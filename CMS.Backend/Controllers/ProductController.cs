@@ -9,20 +9,26 @@ namespace CMS.Backend.Controllers
     public class ProductController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public ProductController(ApplicationDbContext context)
+        public ProductController(ApplicationDbContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         // ================= INDEX =================
         public IActionResult Index()
         {
-            var data = _context.Products.ToList();
+            var data = _context.Products
+                .Include(p => p.CategoryProduct)
+                .OrderByDescending(p => p.Id)
+                .ToList();
+
             return View(data);
         }
 
-        // ================= CREATE =================
+        // ================= CREATE - GET =================
         [HttpGet]
         public IActionResult Create()
         {
@@ -30,84 +36,103 @@ namespace CMS.Backend.Controllers
             return View();
         }
 
+        // ================= CREATE - POST =================
         [HttpPost]
-        public IActionResult Create(Product model, IFormFile uploadImage)
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(Product model, IFormFile? uploadImage)
         {
-            if (uploadImage != null && uploadImage.Length > 0)
+            ModelState.Remove("ImageUrl");
+            ModelState.Remove("CategoryProduct");
+
+            if (!ModelState.IsValid)
             {
-                // 1. Định nghĩa đường dẫn lưu file: wwwroot/uploads
-                string folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-
-                // Tạo thư mục nếu chưa tồn tại
-                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-
-                // 2. Tạo tên file duy nhất để không bị đè dữ liệu
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(uploadImage.FileName);
-                string filePath = Path.Combine(folder, fileName);
-
-                // 3. Chép file vào thư mục
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    uploadImage.CopyTo(stream);
-                }
-
-                // 4. Lưu đường dẫn vào CSDL để sau này hiển thị
-                model.ImageUrl = "/uploads/" + fileName;
+                LoadCategories(model.CategoryProductId);
+                return View(model);
             }
 
-            _context.Products.Add(model);
-            _context.SaveChanges();
+            try
+            {
+                if (uploadImage != null && uploadImage.Length > 0)
+                {
+                    model.ImageUrl = SaveUploadImage(uploadImage);
+                }
+                else
+                {
+                    model.ImageUrl = "/uploads/default.jpg";
+                }
 
-            return RedirectToAction("Index");
+                _context.Products.Add(model);
+                _context.SaveChanges();
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                LoadCategories(model.CategoryProductId);
+                return View(model);
+            }
         }
 
-        // ================= EDIT =================
+        // ================= EDIT - GET =================
         [HttpGet]
         public IActionResult Edit(int id)
         {
             var product = _context.Products.Find(id);
-            if (product == null) return NotFound();
+
+            if (product == null)
+            {
+                return NotFound();
+            }
 
             LoadCategories(product.CategoryProductId);
             return View(product);
         }
 
+        // ================= EDIT - POST =================
         [HttpPost]
-        public IActionResult Edit(Product model, IFormFile uploadImage)
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(Product model, IFormFile? uploadImage)
         {
-            // Bước 1: Kiểm tra xem người dùng có chọn file ảnh mới không
-            if (uploadImage != null && uploadImage.Length > 0)
+            ModelState.Remove("ImageUrl");
+            ModelState.Remove("CategoryProduct");
+
+            if (!ModelState.IsValid)
             {
-                // Thực hiện quy trình upload giống như trang Create
-                string folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(uploadImage.FileName);
-                string filePath = Path.Combine(folder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    uploadImage.CopyTo(stream);
-                }
-
-                // Cập nhật đường dẫn ảnh mới vào model
-                model.ImageUrl = "/uploads/" + fileName;
-            }
-            else
-            {
-                // Bước quan trọng: Nếu không upload ảnh mới, chúng ta phải giữ lại ảnh cũ
-                // Chúng ta cần lấy lại giá trị ImageUrl từ Database để tránh bị ghi đè thành rỗng
-                var oldPost = _context.Posts.AsNoTracking().FirstOrDefault(p => p.Id == model.Id);
-                if (oldPost != null && string.IsNullOrEmpty(model.ImageUrl))
-                {
-                    model.ImageUrl = oldPost.ImageUrl;
-                }
+                LoadCategories(model.CategoryProductId);
+                return View(model);
             }
 
-            _context.Products.Update(model);
-            _context.SaveChanges();
+            var product = _context.Products.FirstOrDefault(p => p.Id == model.Id);
 
-            return RedirectToAction("Index");
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                product.Name = model.Name;
+                product.Price = model.Price;
+                product.StockQuantity = model.StockQuantity;
+                product.Description = model.Description;
+                product.CategoryProductId = model.CategoryProductId;
+
+                if (uploadImage != null && uploadImage.Length > 0)
+                {
+                    product.ImageUrl = SaveUploadImage(uploadImage);
+                }
+
+                _context.SaveChanges();
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", ex.Message);
+                LoadCategories(model.CategoryProductId);
+                return View(model);
+            }
         }
 
         // ================= DELETE =================
@@ -124,15 +149,55 @@ namespace CMS.Backend.Controllers
             return RedirectToAction("Index");
         }
 
-        // ================= HELPER =================
+        // ================= HELPER: LOAD CATEGORY =================
         private void LoadCategories(int? selectedId = null)
         {
             ViewBag.Categories = new SelectList(
-                _context.CategoriesProducts,
+                _context.CategoriesProducts.ToList(),
                 "Id",
                 "Name",
                 selectedId
             );
+        }
+
+        // ================= HELPER: SAVE IMAGE =================
+        private string SaveUploadImage(IFormFile uploadImage)
+        {
+            string webRootPath = _env.WebRootPath;
+
+            if (string.IsNullOrEmpty(webRootPath))
+            {
+                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+
+            string uploadsFolder = Path.Combine(webRootPath, "uploads");
+
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            string extension = Path.GetExtension(uploadImage.FileName).ToLower();
+
+            string[] allowedExtensions =
+            {
+                ".jpg", ".jpeg", ".png", ".gif", ".webp"
+            };
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                throw new Exception("Chỉ được upload ảnh có định dạng .jpg, .jpeg, .png, .gif, .webp");
+            }
+
+            string fileName = Guid.NewGuid().ToString() + extension;
+            string filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                uploadImage.CopyTo(stream);
+            }
+
+            return "/uploads/" + fileName;
         }
     }
 }
