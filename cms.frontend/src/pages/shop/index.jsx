@@ -14,9 +14,16 @@ function Shop() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(categoryParam);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
+  const [selectedPriceRange, setSelectedPriceRange] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const PRICE_RANGES = [
+    { label: "Tất cả", min: "", max: "" },
+    { label: "Dưới 500.000đ", min: "", max: "500000" },
+    { label: "500.000đ - 1.000.000đ", min: "500000", max: "1000000" },
+    { label: "1.000.000đ - 2.000.000đ", min: "1000000", max: "2000000" },
+    { label: "Trên 2.000.000đ", min: "2000000", max: "" }
+  ];
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,16 +56,19 @@ function Shop() {
       const matchKeyword = !keyword || item.name?.toLowerCase().includes(keyword.toLowerCase());
       const matchCategory = !activeCategory || String(item.categoryProductId) === String(activeCategory);
       const price = Number(item.price || 0);
-      const matchMin = !minPrice || price >= Number(minPrice);
-      const matchMax = !maxPrice || price <= Number(maxPrice);
+      
+      const range = PRICE_RANGES[selectedPriceRange];
+      const matchMin = !range.min || price >= Number(range.min);
+      const matchMax = !range.max || price <= Number(range.max);
+      
       return matchKeyword && matchCategory && matchMin && matchMax;
     });
-  }, [products, keyword, activeCategory, minPrice, maxPrice]);
+  }, [products, keyword, activeCategory, selectedPriceRange]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [keyword, activeCategory, minPrice, maxPrice]);
+  }, [keyword, activeCategory, selectedPriceRange]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -88,9 +98,29 @@ function Shop() {
               ))}
             </div>
             <div className="card border-0 shadow-sm p-3">
-              <h6 className="font-weight-bold">Khoảng giá</h6>
-              <input className="form-control form-control-sm mb-2" type="number" placeholder="Giá thấp nhất" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
-              <input className="form-control form-control-sm" type="number" placeholder="Giá cao nhất" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+              <h6 className="font-weight-bold mb-3">Khoảng giá</h6>
+              <div className="d-flex flex-column gap-2">
+                {PRICE_RANGES.map((range, index) => (
+                  <div className="form-check mb-2" key={index}>
+                    <input 
+                      className="form-check-input" 
+                      type="radio" 
+                      name="priceRange" 
+                      id={`priceRange${index}`}
+                      checked={selectedPriceRange === index}
+                      onChange={() => setSelectedPriceRange(index)}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <label 
+                      className="form-check-label text-muted" 
+                      htmlFor={`priceRange${index}`}
+                      style={{ cursor: "pointer", fontSize: "0.95rem" }}
+                    >
+                      {range.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
           </aside>
 
