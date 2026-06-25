@@ -1,86 +1,138 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CMS.Data;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace CMS.Backend.Controllers
 {
-    // 1. Định nghĩa đường dẫn gọi API: https://localhost:xxxx/api/products
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
 
-        // Hàm khởi tạo tiêm ngữ cảnh dữ liệu
         public ProductsController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        // ====================================================================================
-        // HÀM 1: API LẤY TOÀN BỘ SẢN PHẨM (GET METHOD - CÓ GỌT TỈA DỮ LIỆU)
-        // Đường dẫn chạy thử: GET api/products
-        // ====================================================================================
+        // GET: api/Products
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var products = await _context.Products
-                .OrderByDescending(p => p.Id)
-                .Select(p => new {
-                    p.Id,
-                    p.Name,
-                    p.Price,
-                    p.StockQuantity,
-                    p.ImageUrl, // Thuộc tính chuẩn đã đồng bộ
-                    p.CategoryProductId
-                })
-                .ToListAsync();
+            try
+            {
+                var products = await _context.Products
+                    .Include(p => p.CategoryProduct)
+                    .OrderByDescending(p => p.Id)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.Name,
+                        p.Price,
+                        p.ImageUrl,
+                        p.StockQuantity,
 
-            return Ok(products);
+                        // Dòng này bắt buộc để React lọc theo danh mục
+                        p.CategoryProductId,
+
+                        CategoryName = p.CategoryProduct != null
+                            ? p.CategoryProduct.Name
+                            : ""
+                    })
+                    .ToListAsync();
+
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi lấy danh sách sản phẩm",
+                    detail = ex.Message
+                });
+            }
         }
 
-        // ====================================================================================
-        // HÀM 2: API LỌC SẢN PHẨM THEO DANH MỤC SẢN PHẨM (SỬA LỖI GẠCH ĐỎ HÌNH ẢNH)
-        // Đường dẫn chạy thử: GET api/products/categoryproduct/1
-        // ====================================================================================
-        [HttpGet("categoryproduct/{categoryProductId}")]
+        // GET: api/Products/category/1
+        [HttpGet("category/{categoryProductId}")]
         public async Task<IActionResult> GetByCategoryProduct(int categoryProductId)
         {
-            // Lọc các sản phẩm theo thuộc tính khóa ngoại khớp với cơ sở dữ liệu
-            var products = await _context.Products
-                .Where(p => p.CategoryProductId == categoryProductId)
-                .OrderByDescending(p => p.Id)
-                .Select(p => new {
-                    p.Id,
-                    p.Name,
-                    p.Price,
-                    p.StockQuantity,
-                    p.ImageUrl // Đã sửa lỗi đồng bộ thuộc tính ImageUrl ở đây
-                })
-                .ToListAsync();
+            try
+            {
+                var products = await _context.Products
+                    .Include(p => p.CategoryProduct)
+                    .Where(p => p.CategoryProductId == categoryProductId)
+                    .OrderByDescending(p => p.Id)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.Name,
+                        p.Price,
+                        p.ImageUrl,
+                        p.StockQuantity,
+                        p.CategoryProductId,
 
-            return Ok(products);
+                        CategoryName = p.CategoryProduct != null
+                            ? p.CategoryProduct.Name
+                            : ""
+                    })
+                    .ToListAsync();
+
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi lọc sản phẩm theo danh mục",
+                    detail = ex.Message
+                });
+            }
         }
 
-        // ====================================================================================
-        // HÀM 3: API XEM CHI TIẾT MỘT SẢN PHẨM (GET DETAIL BY ID)
-        // Đường dẫn chạy thử: GET api/products/1
-        // ====================================================================================
+        // GET: api/Products/1
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDetail(int id)
         {
-            var product = await _context.Products
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (product == null)
+            try
             {
-                return NotFound(new { message = "Không tìm thấy sản phẩm này trong hệ thống" });
-            }
+                var product = await _context.Products
+                    .Include(p => p.CategoryProduct)
+                    .Where(p => p.Id == id)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.Name,
+                        p.Price,
+                        p.ImageUrl,
+                        p.StockQuantity,
+                        p.Description,
+                        p.CategoryProductId,
 
-            return Ok(product);
+                        CategoryName = p.CategoryProduct != null
+                            ? p.CategoryProduct.Name
+                            : ""
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (product == null)
+                {
+                    return NotFound(new
+                    {
+                        message = "Không tìm thấy sản phẩm này trong hệ thống"
+                    });
+                }
+
+                return Ok(product);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi lấy chi tiết sản phẩm",
+                    detail = ex.Message
+                }); 
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using CMS.Data;
+using CMS.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +20,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 104857600; // 100MB
+});
+
+// Cấu hình Kestrel cho phép upload file lớn
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 104857600; // 100MB
 });
 
 // Đăng ký DbContext
@@ -46,12 +52,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:3000",
                 "http://localhost:3001",
-                "http://localhost:3002",
-                "http://localhost:3003",
-                "http://127.0.0.1:3000",
-                "http://127.0.0.1:3001",
-                "http://127.0.0.1:3002",
-                "http://127.0.0.1:3003"
+                "https://localhost:3000",
+                "https://localhost:3001"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -65,20 +67,22 @@ var app = builder.Build();
 // 2. CONFIGURE PIPELINE
 // ===============================
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
-// Swagger
 if (app.Environment.IsDevelopment())
 {
+    // Hiển thị chi tiết lỗi khi đang phát triển (thay vì crash server)
+    app.UseDeveloperExceptionPage();
+
+    // Swagger
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+    // Chỉ bật HTTPS Redirect ở môi trường Production
+    app.UseHttpsRedirection();
+}
 
 // Đọc file ảnh trong wwwroot
 // Ví dụ: /img/tenanh.jpg hoặc /uploads/tenanh.jpg

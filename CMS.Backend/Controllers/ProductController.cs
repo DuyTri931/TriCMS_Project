@@ -1,4 +1,4 @@
-﻿using CMS.Data;
+using CMS.Data;
 using CMS.Data.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,26 +9,91 @@ namespace CMS.Backend.Controllers
     public class ProductController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _env;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProductController(ApplicationDbContext context, IWebHostEnvironment env)
+        public ProductController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
-            _env = env;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // ================= INDEX =================
+
         public IActionResult Index()
         {
-            var data = _context.Products
+            var products = _context.Products
                 .Include(p => p.CategoryProduct)
-                .OrderByDescending(p => p.Id)
                 .ToList();
 
-            return View(data);
+            return View(products);
         }
 
-        // ================= CREATE - GET =================
+        // ================= LOAD DANH MỤC =================
+
+        private void LoadCategories(int? selectedId = null)
+        {
+            ViewBag.Categories = new SelectList(
+                _context.CategoriesProducts.ToList(),
+                "Id",
+                "Name",
+                selectedId
+            );
+        }
+
+        // ================= LƯU ẢNH =================
+
+        private async Task<string?> SaveImageAsync(IFormFile? imageFile)
+        {
+            if (imageFile == null || imageFile.Length == 0)
+            {
+                return null;
+            }
+
+            // Giới hạn 10MB
+            if (imageFile.Length > 10 * 1024 * 1024)
+            {
+                return null;
+            }
+
+            var extension = Path.GetExtension(imageFile.FileName).ToLower();
+
+            var allowedExtensions = new[]
+            {
+                ".jpg", ".jpeg", ".png", ".webp", ".gif", ".jfif"
+            };
+
+            if (!allowedExtensions.Contains(extension))
+            {
+                return null;
+            }
+
+            var wwwRootPath = _webHostEnvironment.WebRootPath;
+
+            if (string.IsNullOrEmpty(wwwRootPath))
+            {
+                wwwRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+
+            var uploadFolder = Path.Combine(wwwRootPath, "img", "products");
+
+            if (!Directory.Exists(uploadFolder))
+            {
+                Directory.CreateDirectory(uploadFolder);
+            }
+
+            var fileName = Guid.NewGuid().ToString() + extension;
+            var filePath = Path.Combine(uploadFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await imageFile.CopyToAsync(stream);
+            }
+
+            return "/img/products/" + fileName;
+        }
+
+        // ================= CREATE =================
+
         [HttpGet]
         public IActionResult Create()
         {
@@ -36,13 +101,19 @@ namespace CMS.Backend.Controllers
             return View();
         }
 
-        // ================= CREATE - POST =================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Product model, IFormFile? uploadImage)
+        [RequestSizeLimit(104857600)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 104857600)]
+        public async Task<IActionResult> Create(Product model, IFormFile? imageFile)
         {
             ModelState.Remove("ImageUrl");
             ModelState.Remove("CategoryProduct");
+
+            if (imageFile == null || imageFile.Length == 0)
+            {
+                ModelState.AddModelError("ImageUrl", "Vui lòng chọn ảnh sản phẩm.");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -52,29 +123,32 @@ namespace CMS.Backend.Controllers
 
             try
             {
-                if (uploadImage != null && uploadImage.Length > 0)
+                var imageUrl = await SaveImageAsync(imageFile);
+
+                if (string.IsNullOrEmpty(imageUrl))
                 {
-                    model.ImageUrl = SaveUploadImage(uploadImage);
+                    ModelState.AddModelError("ImageUrl", "File ảnh không hợp lệ hoặc quá dung lượng 10MB.");
+                    LoadCategories(model.CategoryProductId);
+                    return View(model);
                 }
-                else
-                {
-                    model.ImageUrl = "/uploads/default.jpg";
-                }
+
+                model.ImageUrl = imageUrl;
 
                 _context.Products.Add(model);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
 
-                return RedirectToAction("Index");
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", ex.Message);
+                ModelState.AddModelError("", "Lỗi khi lưu sản phẩm: " + ex.Message);
                 LoadCategories(model.CategoryProductId);
                 return View(model);
             }
         }
 
-        // ================= EDIT - GET =================
+        // ================= EDIT =================
+
         [HttpGet]
         public IActionResult Edit(int id)
         {
@@ -89,11 +163,17 @@ namespace CMS.Backend.Controllers
             return View(product);
         }
 
-        // ================= EDIT - POST =================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(Product model, IFormFile? uploadImage)
+        [RequestSizeLimit(104857600)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 104857600)]
+        public async Task<IActionResult> Edit(int id, Product model, IFormFile? imageFile)
         {
+            if (id != model.Id)
+            {
+                return NotFound();
+            }
+
             ModelState.Remove("ImageUrl");
             ModelState.Remove("CategoryProduct");
 
@@ -103,7 +183,7 @@ namespace CMS.Backend.Controllers
                 return View(model);
             }
 
-            var product = _context.Products.FirstOrDefault(p => p.Id == model.Id);
+            var product = await _context.Products.FindAsync(id);
 
             if (product == null)
             {
@@ -113,91 +193,43 @@ namespace CMS.Backend.Controllers
             try
             {
                 product.Name = model.Name;
+                product.Description = model.Description;
                 product.Price = model.Price;
                 product.StockQuantity = model.StockQuantity;
-                product.Description = model.Description;
                 product.CategoryProductId = model.CategoryProductId;
 
-                if (uploadImage != null && uploadImage.Length > 0)
+                var imageUrl = await SaveImageAsync(imageFile);
+
+                if (!string.IsNullOrEmpty(imageUrl))
                 {
-                    product.ImageUrl = SaveUploadImage(uploadImage);
+                    product.ImageUrl = imageUrl;
                 }
 
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
 
-                return RedirectToAction("Index");
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", ex.Message);
+                ModelState.AddModelError("", "Lỗi khi cập nhật sản phẩm: " + ex.Message);
                 LoadCategories(model.CategoryProductId);
                 return View(model);
             }
         }
 
         // ================= DELETE =================
-        public IActionResult Delete(int id)
+
+        public async Task<IActionResult> Delete(int id)
         {
-            var product = _context.Products.Find(id);
+            var product = await _context.Products.FindAsync(id);
 
             if (product != null)
             {
                 _context.Products.Remove(product);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Index");
-        }
-
-        // ================= HELPER: LOAD CATEGORY =================
-        private void LoadCategories(int? selectedId = null)
-        {
-            ViewBag.Categories = new SelectList(
-                _context.CategoriesProducts.ToList(),
-                "Id",
-                "Name",
-                selectedId
-            );
-        }
-
-        // ================= HELPER: SAVE IMAGE =================
-        private string SaveUploadImage(IFormFile uploadImage)
-        {
-            string webRootPath = _env.WebRootPath;
-
-            if (string.IsNullOrEmpty(webRootPath))
-            {
-                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            }
-
-            string uploadsFolder = Path.Combine(webRootPath, "uploads");
-
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-
-            string extension = Path.GetExtension(uploadImage.FileName).ToLower();
-
-            string[] allowedExtensions =
-            {
-                ".jpg", ".jpeg", ".png", ".gif", ".webp"
-            };
-
-            if (!allowedExtensions.Contains(extension))
-            {
-                throw new Exception("Chỉ được upload ảnh có định dạng .jpg, .jpeg, .png, .gif, .webp");
-            }
-
-            string fileName = Guid.NewGuid().ToString() + extension;
-            string filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                uploadImage.CopyTo(stream);
-            }
-
-            return "/uploads/" + fileName;
+            return RedirectToAction(nameof(Index));
         }
     }
 }

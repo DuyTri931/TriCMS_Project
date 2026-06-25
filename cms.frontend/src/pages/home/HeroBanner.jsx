@@ -7,7 +7,7 @@ function HeroBanner() {
       <div className="container">
         <div className="row align-items-center">
           <div className="col-md-7 text-white">
-            <span className="badge badge-warning text-dark px-3 py-2 mb-3">Bộ sưu tập mùa giải mới</span>
+                      <span className="badge badge-warning text-dark px-3 py-2 mb-3   ">Bộ sưu tập mùa giải mới</span>
             <h1 className="display-4 font-weight-bold mb-3">Trang bị chuẩn sân cỏ cho mọi trận đấu</h1>
             <p className="lead mb-4">Áo đấu, giày đá bóng, bóng, găng tay thủ môn và phụ kiện thể thao dành cho người yêu bóng đá.</p>
             <Link to="/shop" className="btn btn-light btn-lg font-weight-bold mr-2">Mua ngay</Link>
