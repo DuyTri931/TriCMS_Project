@@ -2,11 +2,16 @@ import React, { useEffect, useState } from "react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import PostCard from "../../components/PostCard";
+import Pagination from "../../components/Pagination";
 import blogService from "../../services/blogService";
 
 function Blog() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -22,6 +27,12 @@ function Blog() {
     fetchPosts();
   }, []);
 
+  const totalPages = Math.ceil(posts.length / itemsPerPage);
+  const currentPosts = posts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div>
       <Header />
@@ -33,9 +44,18 @@ function Blog() {
       </section>
       <main className="container my-5">
         {loading ? <div className="text-center text-muted">Đang tải bài viết...</div> : (
-          <div className="row">
-            {posts.map((item) => <div className="col-md-4 mb-4" key={item.id}><PostCard item={item} /></div>)}
-          </div>
+          <>
+            <div className="row">
+              {currentPosts.map((item) => <div className="col-md-4 mb-4" key={item.id}><PostCard item={item} /></div>)}
+            </div>
+            {totalPages > 1 && (
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={setCurrentPage} 
+              />
+            )}
+          </>
         )}
       </main>
       <Footer />

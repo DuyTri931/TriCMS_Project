@@ -1,4 +1,4 @@
-﻿@model CMS.Data.Entities.Product
+@model CMS.Data.Entities.Product
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
@@ -53,10 +53,13 @@
 
     <div class="mb-3">
         <label class="form-label">Ảnh sản phẩm</label>
-        <input type="file" name="imageFile" class="form-control" accept=".jpg,.jpeg,.png,.webp,.gif,.jfif,image/*" />
+        <input type="file" id="imageInput" name="imageFile" class="form-control" accept=".jpg,.jpeg,.png,.webp,.gif,.jfif,image/*" />
         <small class="text-muted">
             Bắt buộc chọn ảnh. Hỗ trợ .jpg, .jpeg, .png, .webp, .gif, .jfif. Tối đa 10MB.
         </small>
+        <div class="mt-2">
+            <img id="imagePreview" src="#" alt="Xem trước ảnh" style="display: none; max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;" />
+        </div>
         <br />
         <span asp-validation-for="ImageUrl" class="text-danger"></span>
     </div>
@@ -72,4 +75,21 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('imageInput').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('imagePreview');
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = '#';
+                preview.style.display = 'none';
+            }
+        });
+    </script>
 }

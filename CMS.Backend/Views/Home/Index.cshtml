@@ -1,4 +1,4 @@
-﻿Razor CSHTML
+Razor CSHTML
 @{
     Layout = "_LayoutAdmin";
 }
@@ -16,7 +16,7 @@
                     <div class="card-body">
                         <span class="badge bg-primary mb-2">@item.Category.Name</span>
                         <h5 class="card-title">@item.Title</h5>
-                        <p class="card-text text-truncate">@item.Content</p>
+                        <p class="card-text text-truncate">@System.Text.RegularExpressions.Regex.Replace(item.Content ?? "", "<.*?>", string.Empty)</p>
                         <a href="/Post/Details/@item.Id" class="btn btn-outline-danger btn-sm">Đọc tiếp</a>
                     </div>
                     <div class="card-footer text-muted small">

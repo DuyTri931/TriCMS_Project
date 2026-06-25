@@ -1,4 +1,4 @@
-﻿@model IEnumerable<CMS.Data.Entities.Post>
+@model IEnumerable<CMS.Data.Entities.Post>
 @{
     Layout = "_LayoutAdmin";
 }
@@ -45,7 +45,7 @@
                             </h5>
 
                             <p class="card-text text-truncate">
-                            @item.Content
+                            @System.Text.RegularExpressions.Regex.Replace(item.Content ?? "", "<.*?>", string.Empty)
                             </p>
 
                             <p class="text-muted small">

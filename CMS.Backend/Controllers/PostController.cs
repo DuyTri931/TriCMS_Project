@@ -1,4 +1,4 @@
-using CMS.Data;
+    using CMS.Data;
 using CMS.Data.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -45,16 +45,21 @@ namespace CMS.Backend.Controllers
                 Directory.CreateDirectory(uploadsFolder);
             }
 
+            if (uploadImage.Length > 10 * 1024 * 1024)
+            {
+                throw new Exception($"File ảnh quá lớn ({uploadImage.Length / 1024 / 1024}MB). Tối đa là 10MB.");
+            }
+
             string extension = Path.GetExtension(uploadImage.FileName).ToLower();
 
             string[] allowedExtensions =
             {
-                ".jpg", ".jpeg", ".png", ".gif", ".webp"
+                ".jpg", ".jpeg", ".png", ".gif", ".webp", ".jfif"
             };
 
             if (!allowedExtensions.Contains(extension))
             {
-                throw new Exception("Chỉ được upload ảnh có định dạng .jpg, .jpeg, .png, .gif, .webp");
+                throw new Exception($"Đuôi file '{extension}' không được hỗ trợ. Chỉ hỗ trợ: .jpg, .jpeg, .png, .gif, .webp, .jfif");
             }
 
             string fileName = Guid.NewGuid().ToString() + extension;

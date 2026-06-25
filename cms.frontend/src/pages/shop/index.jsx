@@ -5,6 +5,7 @@ import Footer from "../../components/Footer";
 import ProductCard from "../../components/ProductCard";
 import productService from "../../services/productService";
 import categoryProductService from "../../services/categoryProductService";
+import Pagination from "../../components/Pagination";
 
 function Shop() {
   const [searchParams] = useSearchParams();
@@ -16,6 +17,10 @@ function Shop() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   useEffect(() => {
     setActiveCategory(categoryParam);
@@ -49,6 +54,18 @@ function Shop() {
       return matchKeyword && matchCategory && matchMin && matchMax;
     });
   }, [products, keyword, activeCategory, minPrice, maxPrice]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [keyword, activeCategory, minPrice, maxPrice]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const currentProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div>
@@ -91,13 +108,22 @@ function Shop() {
                 <h5>Không tìm thấy sản phẩm nào phù hợp với tiêu chí của bạn</h5>
               </div>
             ) : (
-              <div className="row">
-                {filteredProducts.map((item) => (
-                  <div className="col-md-4 mb-4" key={item.id}>
-                    <ProductCard item={item} />
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="row">
+                  {currentProducts.map((item) => (
+                    <div className="col-md-4 mb-4" key={item.id}>
+                      <ProductCard item={item} />
+                    </div>
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={totalPages} 
+                    onPageChange={setCurrentPage} 
+                  />
+                )}
+              </>
             )}
           </section>
         </div>

@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from "react";
 import ProductCard from "../../components/ProductCard";
+import Pagination from "../../components/Pagination";
 import productService from "../../services/productService";
 
 function ProductGrid() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const data = await productService.getAllProducts();
-        setProducts(Array.isArray(data) ? data.slice(0, 6) : []);
+        setProducts(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
       } finally {
@@ -20,6 +25,12 @@ function ProductGrid() {
 
     fetchProducts();
   }, []);
+
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const currentProducts = products.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <section className="container my-5">
@@ -36,13 +47,22 @@ function ProductGrid() {
           <p className="text-muted">Không tìm thấy sản phẩm nào phù hợp với tiêu chí của bạn</p>
         </div>
       ) : (
-        <div className="row">
-          {products.map((item) => (
-            <div className="col-md-4 mb-4" key={item.id}>
-              <ProductCard item={item} />
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="row">
+            {currentProducts.map((item) => (
+              <div className="col-md-4 mb-4" key={item.id}>
+                <ProductCard item={item} />
+              </div>
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <Pagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={setCurrentPage} 
+            />
+          )}
+        </>
       )}
     </section>
   );

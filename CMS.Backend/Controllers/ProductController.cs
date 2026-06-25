@@ -46,13 +46,13 @@ namespace CMS.Backend.Controllers
         {
             if (imageFile == null || imageFile.Length == 0)
             {
-                return null;
+                return null; // For Edit where image is optional
             }
 
             // Giới hạn 10MB
             if (imageFile.Length > 10 * 1024 * 1024)
             {
-                return null;
+                throw new Exception($"File ảnh quá lớn ({imageFile.Length / 1024 / 1024}MB). Tối đa là 10MB.");
             }
 
             var extension = Path.GetExtension(imageFile.FileName).ToLower();
@@ -64,7 +64,7 @@ namespace CMS.Backend.Controllers
 
             if (!allowedExtensions.Contains(extension))
             {
-                return null;
+                throw new Exception($"Đuôi file '{extension}' không được hỗ trợ. Chỉ hỗ trợ: .jpg, .jpeg, .png, .webp, .gif, .jfif");
             }
 
             var wwwRootPath = _webHostEnvironment.WebRootPath;
@@ -124,13 +124,6 @@ namespace CMS.Backend.Controllers
             try
             {
                 var imageUrl = await SaveImageAsync(imageFile);
-
-                if (string.IsNullOrEmpty(imageUrl))
-                {
-                    ModelState.AddModelError("ImageUrl", "File ảnh không hợp lệ hoặc quá dung lượng 10MB.");
-                    LoadCategories(model.CategoryProductId);
-                    return View(model);
-                }
 
                 model.ImageUrl = imageUrl;
 

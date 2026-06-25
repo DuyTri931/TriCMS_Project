@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import blogService from '../services/blogService';
 
 const PostList = () => {
@@ -59,7 +59,7 @@ const PostList = () => {
                             <div className="card h-100 border-0 shadow-sm bg-light">
                                 <div className="card-body">
                                     <h5 className="font-weight-bold">
-                                        <a href={`/post/${item.id}`} className="text-dark text-decoration-none text-hover-primary">
+                                        <a href={`/blog/${item.id}`} className="text-dark text-decoration-none text-hover-primary">
                                             {item.title}
                                         </a>
                                     </h5>

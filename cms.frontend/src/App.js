@@ -4,7 +4,7 @@ import Home from "./pages/home";
 import Shop from "./pages/shop";
 import ProductDetail from "./pages/product-detail";
 import Blog from "./pages/blog";
-import BlogDetail from "./pages/blog/BlogDetail";
+import BlogDetail from "./pages/blog/PostDetailPage";
 import Cart from "./pages/cart";
 import Checkout from "./pages/checkout";
 import Login from "./pages/login";
